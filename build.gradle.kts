@@ -1,6 +1,6 @@
 import groovy.lang.Closure
 import org.gradle.jvm.tasks.Jar
-import xyz.wagyourtail.unimined.api.minecraft.task.RemapJarTask
+import xyz.wagyourtail.unimined.api.minecraft.task.AbstractRemapJarTask
 
 plugins {
     java
@@ -51,9 +51,13 @@ repositories {
             includeGroupAndSubgroups("com.github")
         }
     }
-}
 
-val mainImplementation by configurations.creating
+    maven("https://maven.shedaniel.me/") {
+        content {
+            includeGroup("me.shedaniel.cloth")
+        }
+    }
+}
 
 unimined.minecraft {
     version(catalog.versions.minecraft.get())
@@ -81,6 +85,11 @@ dependencies {
 
     modImplementation(catalog.kiwi)
     modImplementation(catalog.boathud)
+    modImplementation(catalog.cloth.config) {
+        exclude(group = "net.fabricmc.fabric-api")
+    }
+
+    modImplementation(catalog.openboatutils)
 }
 
 tasks {
@@ -123,7 +132,7 @@ tasks {
         options.compilerArgs.add("-parameters")
     }
 
-    named<RemapJarTask>("remapJar") {
+    named<AbstractRemapJarTask>("remapJar") {
         mixinRemap {
             disableRefmap()
         }

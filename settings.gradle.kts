@@ -41,6 +41,10 @@ dependencyResolutionManagement.versionCatalogs.create("catalog") {
     library("kiwi", "maven.modrinth", "kiwi").version("15.1.1+fabric")
 
     library("boathud", "maven.modrinth", "boat-hud-extended").version("1.1.0")
+
+    library("openboatutils", "maven.modrinth", "openboatutils").version("mc1.21-0.4.2")
+
+    library("cloth-config", "me.shedaniel.cloth", "cloth-config-fabric").version("11.1.136")
 }
 
 plugins {

@@ -16,7 +16,7 @@ import snownee.kiwi.network.KPacketSender;
 public class BoatSettingsEntityMixin {
 	@Inject(method = "startSeenByPlayer", at = @At("HEAD"))
 	private void startSeenByPlayer(ServerPlayer player, CallbackInfo ci) {
-		Entity entity = (Entity) (Object) this;
+		var entity = (Entity) (Object) this;
 		if (entity instanceof Boat boat && !BoatTweaksUtil.isDefaultSettings(boat)) {
 			KPacketSender.send(new SSyncSettingsPacket(BoatTweaksUtil.getBoatSettings(boat), boat.getId()), player);
 		}

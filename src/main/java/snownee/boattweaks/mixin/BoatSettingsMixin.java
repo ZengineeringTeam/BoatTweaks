@@ -8,11 +8,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -26,7 +28,10 @@ import snownee.boattweaks.duck.BTBoostingBoat;
 import snownee.boattweaks.duck.BTConfigurableBoat;
 import snownee.boattweaks.duck.BTMovementDistance;
 
-@Mixin(value = Boat.class, priority = 900)
+/**
+ * 1001 after OpenBoatUtil
+ */
+@Mixin(value = Boat.class, priority = 1001)
 public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfigurableBoat {
 
 	@Shadow
@@ -61,34 +66,42 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 				: original.call(block);
 	}
 
-	@ModifyVariable(method = "controlBoat", at = @At(value = "STORE", ordinal = 0), index = 1)
-	private float modifyForce(float f) {
+	@ModifyConstant(method = "controlBoat", constant = @Constant(floatValue = 1.0f))
+	private float boattweaks$modifyRotation(final float original) {
+		var settings = boattweaks$getSettings();
+		var distance = ((BTMovementDistance) this).boattweaks$getDistance();
+		if (status == Boat.Status.ON_LAND) {
+			return settings.getDegradedForce(settings.turningForce(), distance);
+		} else if (status == Boat.Status.IN_AIR) {
+			return settings.getDegradedForce(settings.turningForceInAir(), distance);
+		}
+		return original;
+	}
+
+	@ModifyExpressionValue(method = "controlBoat", at = @At(value = "CONSTANT", args = "floatValue=0.04"))
+	private float boattweaks$modifyForward(final float original) {
+		if (status == Boat.Status.ON_LAND) {
+			BoatSettings settings = boattweaks$getSettings();
+			BTBoostingBoat boat = (BTBoostingBoat) this;
+			return original + settings.forwardForce() + boat.boattweaks$getExtraForwardForce();
+		}
+		return original;
+	}
+
+	@ModifyExpressionValue(method = "controlBoat", at = @At(value = "CONSTANT", ordinal = 1, args = "floatValue=0.005"))
+	private float boattweaks$modifyBackward(final float original) {
+		if (status == Boat.Status.ON_LAND) {
+			BoatSettings settings = boattweaks$getSettings();
+			return original + settings.backwardForce();
+		}
+		return original;
+	}
+
+	@Inject(method = "controlBoat", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/vehicle/Boat;getDeltaMovement()Lnet/minecraft/world/phys/Vec3;"))
+	private void boattweaks$degradeForce(CallbackInfo ci, @Local LocalFloatRef force) {
 		BoatSettings settings = boattweaks$getSettings();
 		float distance = ((BTMovementDistance) this).boattweaks$getDistance();
-		if (status == Boat.Status.ON_LAND) {
-			if (inputUp) {
-				BTBoostingBoat boat = (BTBoostingBoat) this;
-				f += settings.forwardForce() - 0.04F + boat.boattweaks$getExtraForwardForce();
-			}
-			if (inputDown) {
-				f -= settings.backwardForce() - 0.005F;
-			}
-			f = settings.getDegradedForce(f, distance);
-			if (inputLeft) {
-				deltaRotation += 1 - settings.getDegradedForce(settings.turningForce(), distance);
-			}
-			if (inputRight) {
-				deltaRotation -= 1 - settings.getDegradedForce(settings.turningForce(), distance);
-			}
-		} else if (status == Boat.Status.IN_AIR) {
-			if (inputLeft) {
-				deltaRotation += 1 - settings.getDegradedForce(settings.turningForceInAir(), distance);
-			}
-			if (inputRight) {
-				deltaRotation -= 1 - settings.getDegradedForce(settings.turningForceInAir(), distance);
-			}
-		}
-		return f;
+		force.set(settings.getDegradedForce(force.get(), distance));
 	}
 
 	@Inject(method = "tick", at = @At("HEAD"))
