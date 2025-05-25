@@ -116,7 +116,7 @@ unifiedPublishing {
         gameVersions = listOf("1.21.1")
         gameLoaders = listOf("neoforge")
 
-        mainPublication(tasks.jar.get()) // Declares the publicated jar
+        mainPublication(tasks.getByName("remapJar")) // Declares the publicated jar
 
         if (System.getenv("CURSE_TOKEN") != null) {
             curseforge {
