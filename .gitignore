@@ -19,8 +19,11 @@ build
 
 # other
 eclipse
-run
+run/client/*
+!run/client/kubejs
+run/client/kubejs/*
+!run/client/kubejs/startup_scripts
+!run/client/kubejs/server_scripts
 /mcmodsrepo/
-!run/kubejs
 
 /CHANGELOG.md

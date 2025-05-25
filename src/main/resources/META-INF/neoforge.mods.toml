@@ -7,7 +7,7 @@ modId = "boattweaks"
 version = "${file.jarVersion}"
 displayName = "Boat Tweaks"
 authors = "Snownee"
-displayURL = "https://www.curseforge.com/minecraft/mc-mods/boattweaks"
+displayURL = "https://www.curseforge.com/minecraft/mc-mods/boat-tweaks"
 description = "Provides utilities and improves the maneuverability of the boats so that more people can enjoy the fun of boat racing."
 credits = "SettingDust"
 

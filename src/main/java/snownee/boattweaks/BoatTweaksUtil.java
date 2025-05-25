@@ -7,11 +7,24 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import snownee.boattweaks.duck.BTClientPacketListener;
 import snownee.boattweaks.duck.BTConfigurableBoat;
 import snownee.boattweaks.duck.BTMovementDistance;
 
 public class BoatTweaksUtil {
+	public static void putSpecialBlock(Block block, int cooldown) {
+		BoatTweaks.CUSTOM_SPECIAL_BLOCKS.put(block, cooldown);
+	}
+
+	public static boolean isSpecialBlock(Block block) {
+		return BoatTweaks.CUSTOM_SPECIAL_BLOCKS.containsKey(block);
+	}
+
+	public static int removeSpecialBlock(Block block) {
+		return BoatTweaks.CUSTOM_SPECIAL_BLOCKS.removeInt(block);
+	}
+
 	public static boolean isClientSide(Level level, String method) {
 		if (level.isClientSide) {
 			BoatTweaks.LOGGER.warn("BoatTweaksUtil#{} can only be called on server side.", method);

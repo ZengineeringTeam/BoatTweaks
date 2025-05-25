@@ -1,0 +1,1 @@
+snownee.boattweaks.compat.kubejs.BoatTweaksKubeJSPlugin boattweaks
