@@ -120,10 +120,10 @@ unifiedPublishing {
         version = realVersion // Optional, Inferred from project by default
         changelog = if (file("CHANGELOG.md").exists()) file("CHANGELOG.md").readText() else "" // Optional, in markdown format
         releaseType = project.property("release_type").toString() // Optional, use "release", "beta" or "alpha"
-        gameVersions = listOf("1.21.1")
+        gameVersions = listOf("1.20.1")
         gameLoaders = listOf("neoforge", "forge")
 
-        mainPublication(tasks.jar.get()) // Declares the publicated jar
+        mainPublication(tasks.getByName("remapJar")) // Declares the publicated jar
 
         if (System.getenv("CURSE_TOKEN") != null) {
             curseforge {
