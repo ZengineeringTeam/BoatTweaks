@@ -1,9 +1,10 @@
 dependencyResolutionManagement {
     pluginManagement {
         repositories {
-            maven("https://maven.wagyourtail.xyz/releases")
             mavenCentral()
             gradlePluginPortal()
+            maven("https://maven.architectury.dev/")
+            maven("https://maven.wagyourtail.xyz/releases")
         }
     }
 }
