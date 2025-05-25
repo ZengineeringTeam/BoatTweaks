@@ -13,10 +13,8 @@ credits = "SettingDust"
 
 [[dependencies.boattweaks]]
 modId = "kiwi"
-versionRange = "[15,)"
-
-[[mixins]]
-config = "boattweaks.mixins.json"
+versionRange = "[11,)"
+mandatory = true
 
 [modproperties.boattweaks]
 catalogueItemIcon = "oak_boat" #Support for Catalogue mod

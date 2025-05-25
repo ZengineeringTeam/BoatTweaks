@@ -13,7 +13,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.vehicle.Boat;
 import snownee.boattweaks.duck.BTMovementDistance;
 import snownee.boattweaks.network.SSyncDistancePacket;
-import snownee.kiwi.network.KPacketSender;
 
 @Mixin(value = Boat.class, priority = 1500)
 public class BoatMovementDistanceMixin implements BTMovementDistance {
@@ -52,7 +51,7 @@ public class BoatMovementDistanceMixin implements BTMovementDistance {
 		lastZ = (float) boat.getZ();
 		if (unsyncedDistance >= 5) {
 			if (boat.getControllingPassenger() instanceof ServerPlayer player) {
-				KPacketSender.send(new SSyncDistancePacket(boat.getId(), boattweaks$getDistance()), player);
+				SSyncDistancePacket.sync(boat, player);
 			}
 			unsyncedDistance = 0;
 		}

@@ -6,13 +6,10 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.Reference2FloatMap;
 import it.unimi.dsi.fastutil.objects.Reference2FloatMaps;
 import it.unimi.dsi.fastutil.objects.Reference2FloatOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -45,7 +42,6 @@ public final class BoatSettings implements Cloneable {
 					Codec.mapPair(Codec.INT.fieldOf("degradeForceLossStartFrom"), Codec.FLOAT.fieldOf("degradeForceMaxLoss"))
 							.forGetter(it -> Pair.of(it.degradeForceLossStartFrom(), it.degradeForceMaxLoss())))
 			.apply(instance, BoatSettings::new));
-	public static final StreamCodec<ByteBuf, BoatSettings> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
 	public Reference2FloatMap<Block> frictionOverrides;
 	public float forwardForce;
 	public float backwardForce;

@@ -20,10 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.Boat;
-import net.minecraft.world.entity.vehicle.VehicleEntity;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.state.BlockState;
 import snownee.boattweaks.BoatSettings;
@@ -31,11 +28,8 @@ import snownee.boattweaks.duck.BTBoostingBoat;
 import snownee.boattweaks.duck.BTConfigurableBoat;
 import snownee.boattweaks.duck.BTMovementDistance;
 
-/**
- * 1001 after OpenBoatUtil
- */
-@Mixin(value = Boat.class, priority = 1001)
-public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfigurableBoat {
+@Mixin(value = Boat.class, priority = 900)
+public abstract class BoatSettingsMixin implements BTConfigurableBoat {
 
 	@Shadow
 	private Boat.Status status;
@@ -55,13 +49,17 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 	@Nullable
 	private BoatSettings boatTweaks$settings;
 
-	private BoatSettingsMixin(final EntityType<?> entityType, final Level level) {
-		super(entityType, level);
+	@Inject(method = "<init>(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;)V", at = @At("RETURN"))
+	private void init(CallbackInfo ci) {
+		Boat boat = (Boat) (Object) this;
+		boat.setMaxUpStep(BoatSettings.DEFAULT.stepUpHeight);
 	}
 
 	@WrapOperation(
 			method = "getGroundFriction",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getFriction(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/Entity;)F")
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraft/world/level/block/state/BlockState;getFriction(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/Entity;)F")
 	)
 	private float boattweaks$getGroundFriction(
 			final BlockState block,
@@ -105,7 +103,11 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 		return original;
 	}
 
-	@Inject(method = "controlBoat", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/vehicle/Boat;getDeltaMovement()Lnet/minecraft/world/phys/Vec3;"))
+	@Inject(
+			method = "controlBoat",
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraft/world/entity/vehicle/Boat;getDeltaMovement()Lnet/minecraft/world/phys/Vec3;"))
 	private void boattweaks$degradeForce(CallbackInfo ci, @Local LocalFloatRef force) {
 		BoatSettings settings = boattweaks$getSettings();
 		float distance = ((BTMovementDistance) this).boattweaks$getDistance();
@@ -133,14 +135,18 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
 	private void addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo ci) {
 		if (boatTweaks$settings != null) {
-			compoundTag.put("BoatTweaksSettings", BoatSettings.CODEC.encodeStart(NbtOps.INSTANCE, boatTweaks$settings).getOrThrow());
+			compoundTag.put(
+					"BoatTweaksSettings",
+					BoatSettings.CODEC.encodeStart(NbtOps.INSTANCE, boatTweaks$settings)
+							.getOrThrow(false, it -> {throw new IllegalStateException(it);}));
 		}
 	}
 
 	@Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
 	private void readAdditionalSaveData(CompoundTag compoundTag, CallbackInfo ci) {
 		if (compoundTag.contains("BoatTweaksSettings")) {
-			boattweaks$setSettings(BoatSettings.CODEC.parse(NbtOps.INSTANCE, compoundTag.getCompound("BoatTweaksSettings")).getOrThrow());
+			boattweaks$setSettings(BoatSettings.CODEC.parse(NbtOps.INSTANCE, compoundTag.getCompound("BoatTweaksSettings"))
+					.getOrThrow(false, it -> {throw new IllegalStateException(it);}));
 		}
 	}
 
@@ -155,10 +161,5 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 	@Override
 	public void boattweaks$setSettings(@Nullable BoatSettings settings) {
 		this.boatTweaks$settings = settings;
-	}
-
-	@Override
-	public float maxUpStep() {
-		return boattweaks$getSettings().stepUpHeight();
 	}
 }

@@ -20,16 +20,15 @@ import snownee.boattweaks.network.SUpdateGhostModePacket;
 import snownee.kiwi.AbstractModule;
 import snownee.kiwi.KiwiGO;
 import snownee.kiwi.KiwiModule;
-import snownee.kiwi.network.KPacketSender;
-import snownee.kiwi.util.KUtil;
+import snownee.kiwi.util.Util;
 
 @KiwiModule
 public class BoatTweaks extends AbstractModule {
 
 	public static final String ID = "boattweaks";
 	public static final Logger LOGGER = LogUtils.getLogger();
-	public static final KiwiGO<SoundEvent> BOOST = go(() -> SoundEvent.createVariableRangeEvent(RL("boost")));
-	public static final KiwiGO<SoundEvent> EJECT = go(() -> SoundEvent.createVariableRangeEvent(RL("eject")));
+	public static final KiwiGO<SoundEvent> BOOST = go(() -> SoundEvent.createVariableRangeEvent(resourceLocation("boost")));
+	public static final KiwiGO<SoundEvent> EJECT = go(() -> SoundEvent.createVariableRangeEvent(resourceLocation("eject")));
 	public static final GameRules.Key<GameRules.BooleanValue> AUTO_REMOVE_BOAT = GameRules.register(
 			ID + ":autoRemoveBoat",
 			GameRules.Category.MISC,
@@ -40,7 +39,7 @@ public class BoatTweaks extends AbstractModule {
 			GameRules.Category.MISC,
 			GameRules.BooleanValue.create(false, (server, rule) -> {
 				server.getPlayerList().getPlayers().forEach(p -> {
-					KPacketSender.send(new SUpdateGhostModePacket(rule.get()), p);
+					SUpdateGhostModePacket.sync(p, rule.get());
 				});
 			})
 	);
@@ -51,7 +50,7 @@ public class BoatTweaks extends AbstractModule {
 		SPECIAL_BLOCK_LISTENERS.forEach(listener -> listener.on(boat, blockState, blockPos));
 	}
 
-	public static ResourceLocation RL(String path) {
-		return KUtil.RL(path, ID);
+	public static ResourceLocation resourceLocation(String path) {
+		return Util.RL(path, ID);
 	}
 }

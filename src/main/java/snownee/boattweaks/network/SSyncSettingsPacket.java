@@ -1,68 +1,58 @@
 package snownee.boattweaks.network;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.vehicle.Boat;
 import snownee.boattweaks.BoatSettings;
-import snownee.boattweaks.BoatTweaks;
+import snownee.boattweaks.BoatTweaksUtil;
 import snownee.boattweaks.duck.BTConfigurableBoat;
 import snownee.boattweaks.util.CommonProxy;
-import snownee.kiwi.network.KPacketSender;
 import snownee.kiwi.network.KiwiPacket;
-import snownee.kiwi.network.PayloadContext;
-import snownee.kiwi.network.PlayPacketHandler;
+import snownee.kiwi.network.PacketHandler;
 
-@KiwiPacket
-public record SSyncSettingsPacket(
-		String version,
-		BoatSettings settings,
-		int entityId
-) implements CustomPacketPayload {
-	public static final CustomPacketPayload.Type<SSyncSettingsPacket> TYPE = new CustomPacketPayload.Type<>(BoatTweaks.RL("sync_settings"));
+@KiwiPacket(value = "sync_settings", dir = KiwiPacket.Direction.PLAY_TO_CLIENT)
+public class SSyncSettingsPacket extends PacketHandler {
+	public static SSyncSettingsPacket I;
 
-	public SSyncSettingsPacket(BoatSettings settings, int entityId) {
-		this(CommonProxy.getVersion(), settings, entityId);
+	public static void sync(ServerPlayer player, Boat boat) {
+		BoatSettings boatSettings = BoatTweaksUtil.getBoatSettings(boat);
+		sync(player, boatSettings, boat.getId());
+	}
+
+	public static void sync(ServerPlayer player, BoatSettings boatSettings, int entityId) {
+		I.send(
+				player, buf -> {
+					buf.writeUtf(CommonProxy.getVersion());
+					buf.writeWithCodec(NbtOps.INSTANCE, BoatSettings.CODEC, boatSettings);
+					buf.writeInt(entityId);
+				});
 	}
 
 	@Override
-	public Type<? extends CustomPacketPayload> type() {
-		return TYPE;
-	}
-
-	public static final class Handler implements PlayPacketHandler<SSyncSettingsPacket> {
-		public static final StreamCodec<RegistryFriendlyByteBuf, SSyncSettingsPacket> STREAM_CODEC = StreamCodec.composite(
-				ByteBufCodecs.STRING_UTF8,
-				SSyncSettingsPacket::version,
-				BoatSettings.STREAM_CODEC,
-				SSyncSettingsPacket::settings,
-				ByteBufCodecs.INT,
-				SSyncSettingsPacket::entityId,
-				SSyncSettingsPacket::new
-		);
-
-		@Override
-		public void handle(SSyncSettingsPacket packet, PayloadContext context) {
-			if (!Objects.equals(packet.version(), CommonProxy.getVersion())) {
-				return;
+	public CompletableFuture<FriendlyByteBuf> receive(
+			Function<Runnable, CompletableFuture<FriendlyByteBuf>> executor,
+			FriendlyByteBuf buf,
+			@Nullable ServerPlayer player) {
+		if (!Objects.equals(buf.readUtf(), CommonProxy.getVersion())) {
+			return null;
+		}
+		BoatSettings settings = buf.readWithCodec(NbtOps.INSTANCE, BoatSettings.CODEC);
+		int entityId = buf.readInt();
+		return executor.apply(() -> {
+			if (entityId == Integer.MIN_VALUE) {
+				BoatSettings.DEFAULT = settings;
+				CPingServerPacket.ping();
+			} else if (Objects.requireNonNull(Minecraft.getInstance().level).getEntity(entityId) instanceof Boat boat) {
+				((BTConfigurableBoat) boat).boattweaks$setSettings(settings);
 			}
-			context.execute(() -> {
-				if (packet.entityId() == Integer.MIN_VALUE) {
-					BoatSettings.DEFAULT = packet.settings();
-					KPacketSender.sendToServer(CPingServerPacket.INSTANCE);
-				} else if (Objects.requireNonNull(Minecraft.getInstance().level).getEntity(packet.entityId()) instanceof Boat boat) {
-					((BTConfigurableBoat) boat).boattweaks$setSettings(packet.settings());
-				}
-			});
-		}
-
-		@Override
-		public StreamCodec<RegistryFriendlyByteBuf, SSyncSettingsPacket> streamCodec() {
-			return STREAM_CODEC;
-		}
+		});
 	}
 }

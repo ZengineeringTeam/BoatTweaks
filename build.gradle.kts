@@ -1,5 +1,5 @@
 import org.gradle.jvm.tasks.Jar
-import xyz.wagyourtail.unimined.api.minecraft.task.AbstractRemapJarTask
+import xyz.wagyourtail.unimined.api.minecraft.task.RemapJarTask
 
 plugins {
     java
@@ -14,9 +14,9 @@ val minecraft_version: String by rootProject.properties
 val mod_version: String by rootProject.properties
 
 group = "snownee.boattweaks"
-version = "${minecraft_version}-NeoForge-${mod_version}"
+version = "${minecraft_version}-Forge-${mod_version}"
 
-var realVersion = "${mod_version}+neoforge"
+var realVersion = "${mod_version}+forge"
 
 base {
     archivesName = archive_name
@@ -24,11 +24,11 @@ base {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     withSourcesJar()
 }
@@ -62,6 +62,8 @@ repositories {
             includeGroup("dev.latvian.apps")
         }
     }
+
+    maven("https://maven.architectury.dev/")
 }
 
 unimined.minecraft {
@@ -69,27 +71,29 @@ unimined.minecraft {
 
     mappings {
         mojmap()
-        parchment(version = "2024.11.17")
+        parchment(version = "2023.09.03")
 
-        devFallbackNamespace("mojmap")
+        devFallbackNamespace("official")
     }
 
     if (sourceSet == sourceSets.main.get()) {
-        neoForge {
-            loader("172")
+        minecraftForge {
+            loader("47.4.1")
+            mixinConfig("boattweaks.mixins.json")
         }
     }
 }
 
-val include by configurations.getting
+val modImplementation by configurations.getting
 
 dependencies {
-    implementation("maven.modrinth:kiwi:15.5.2+neoforge")
-    implementation("me.shedaniel.cloth:cloth-config-neoforge:15.0.140") {
-        exclude(group = "net.fabricmc.fabric-api")
-    }
+//    annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1")
+//    annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1")
 
-    implementation("dev.latvian.mods:kubejs-neoforge:2101.7.2-build.233")
+    modImplementation("maven.modrinth:kiwi:11.8.31+forge")
+    modImplementation("me.shedaniel.cloth:cloth-config-forge:11.1.136")
+
+    modImplementation("dev.latvian.mods:kubejs-forge:2001.6.5-build.20")
 }
 
 tasks {
@@ -103,7 +107,10 @@ tasks {
         options.compilerArgs.add("-parameters")
     }
 
-    named<AbstractRemapJarTask>("remapJar") {
+    withType<RemapJarTask> {
+        mixinRemap {
+            enableMixinExtra()
+        }
     }
 }
 
@@ -114,7 +121,7 @@ unifiedPublishing {
         changelog = if (file("CHANGELOG.md").exists()) file("CHANGELOG.md").readText() else "" // Optional, in markdown format
         releaseType = project.property("release_type").toString() // Optional, use "release", "beta" or "alpha"
         gameVersions = listOf("1.21.1")
-        gameLoaders = listOf("neoforge")
+        gameLoaders = listOf("neoforge", "forge")
 
         mainPublication(tasks.jar.get()) // Declares the publicated jar
 

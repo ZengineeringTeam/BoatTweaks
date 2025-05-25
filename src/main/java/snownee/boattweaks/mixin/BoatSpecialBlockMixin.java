@@ -51,7 +51,7 @@ public abstract class BoatSpecialBlockMixin implements BTBoostingBoat {
 					value = "INVOKE",
 					target = "Lnet/minecraft/world/level/block/state/BlockState;getFriction(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/Entity;)F")
 	)
-	private void getGroundFriction(
+	private void boattweaks$getGroundFriction(
 			final CallbackInfoReturnable<Float> cir,
 			@Local BlockPos.MutableBlockPos pos,
 			@Local BlockState blockState) {
