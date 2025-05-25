@@ -1,49 +1,60 @@
 package snownee.boattweaks.util;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import snownee.boattweaks.BoatSettings;
 import snownee.boattweaks.BoatTweaks;
 import snownee.boattweaks.BoatTweaksCommonConfig;
 import snownee.boattweaks.duck.BTServerPlayer;
 import snownee.boattweaks.network.SSyncSettingsPacket;
 import snownee.boattweaks.network.SUpdateGhostModePacket;
-import snownee.kiwi.Mod;
 import snownee.kiwi.config.KiwiConfigManager;
 import snownee.kiwi.network.KPacketSender;
 
 @Mod(BoatTweaks.ID)
-public class CommonProxy implements ModInitializer {
+public class CommonProxy {
 	private static String version;
 
 	public static String getVersion() {
 		return version;
 	}
 
-	@Override
-	public void onInitialize() {
-		version = FabricLoader.getInstance().getModContainer(BoatTweaks.ID).map(container -> container.getMetadata()
-				.getVersion()
-				.getFriendlyString()).orElseThrow();
-		// Currently in 1.19.2, the serverInit method has a bug that it will not be called for integrated server.
-		ServerLifecycleEvents.SERVER_STARTING.register($ -> {
-			if (!$.isDedicatedServer()) {
+	public CommonProxy(IEventBus modBus) {
+		version = ModList.get()
+				.getModFileById(BoatTweaks.ID)
+				.getMods()
+				.stream()
+				.map(it -> it.getVersion().toString())
+				.findFirst()
+				.orElseThrow();
+
+		modBus.addListener((FMLClientSetupEvent event) -> {
+			ClientProxy.init();
+		});
+
+		NeoForge.EVENT_BUS.addListener((ServerStartingEvent event) -> {
+			if (!event.getServer().isDedicatedServer()) {
 				KiwiConfigManager.getHandler(BoatTweaksCommonConfig.class).refresh();
 			}
 			BoatTweaksCommonConfig.refresh();
 		});
-		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-			KPacketSender.send(new SSyncSettingsPacket(BoatSettings.DEFAULT, Integer.MIN_VALUE), handler.player);
-			if (handler.player.level().getGameRules().getBoolean(BoatTweaks.GHOST_MODE)) {
-				KPacketSender.send(new SUpdateGhostModePacket(true), handler.player);
+
+		NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
+			var player = event.getEntity();
+			KPacketSender.send(new SSyncSettingsPacket(BoatSettings.DEFAULT, Integer.MIN_VALUE), player);
+			if (player.level().getGameRules().getBoolean(BoatTweaks.GHOST_MODE)) {
+				KPacketSender.send(new SUpdateGhostModePacket(true), player);
 			}
 		});
-		ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
-			boolean verified = ((BTServerPlayer) oldPlayer).boattweaks$isVerified();
-			((BTServerPlayer) newPlayer).boattweaks$setVerified(verified);
+
+		NeoForge.EVENT_BUS.addListener((PlayerEvent.Clone event) -> {
+			boolean verified = ((BTServerPlayer) event.getOriginal()).boattweaks$isVerified();
+			((BTServerPlayer) event.getEntity()).boattweaks$setVerified(verified);
 		});
 	}
 }

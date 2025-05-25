@@ -9,8 +9,6 @@ import com.mojang.logging.LogUtils;
 
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
-import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -32,15 +30,15 @@ public class BoatTweaks extends AbstractModule {
 	public static final Logger LOGGER = LogUtils.getLogger();
 	public static final KiwiGO<SoundEvent> BOOST = go(() -> SoundEvent.createVariableRangeEvent(RL("boost")));
 	public static final KiwiGO<SoundEvent> EJECT = go(() -> SoundEvent.createVariableRangeEvent(RL("eject")));
-	public static final GameRules.Key<GameRules.BooleanValue> AUTO_REMOVE_BOAT = GameRuleRegistry.register(
+	public static final GameRules.Key<GameRules.BooleanValue> AUTO_REMOVE_BOAT = GameRules.register(
 			ID + ":autoRemoveBoat",
 			GameRules.Category.MISC,
-			GameRuleFactory.createBooleanRule(false)
+			GameRules.BooleanValue.create(false)
 	);
-	public static final GameRules.Key<GameRules.BooleanValue> GHOST_MODE = GameRuleRegistry.register(
+	public static final GameRules.Key<GameRules.BooleanValue> GHOST_MODE = GameRules.register(
 			ID + ":ghostMode",
 			GameRules.Category.MISC,
-			GameRuleFactory.createBooleanRule(false, (server, rule) -> {
+			GameRules.BooleanValue.create(false, (server, rule) -> {
 				server.getPlayerList().getPlayers().forEach(p -> {
 					KPacketSender.send(new SUpdateGhostModePacket(rule.get()), p);
 				});

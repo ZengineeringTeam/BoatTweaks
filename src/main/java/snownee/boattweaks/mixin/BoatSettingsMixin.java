@@ -16,13 +16,16 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.state.BlockState;
 import snownee.boattweaks.BoatSettings;
 import snownee.boattweaks.duck.BTBoostingBoat;
 import snownee.boattweaks.duck.BTConfigurableBoat;
@@ -47,10 +50,10 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 	@Shadow
 	private float deltaRotation;
 	@Unique
-	private int wallHitCd;
+	private int boatTweaks$wallHitCd;
 	@Unique
 	@Nullable
-	private BoatSettings settings;
+	private BoatSettings boatTweaks$settings;
 
 	private BoatSettingsMixin(final EntityType<?> entityType, final Level level) {
 		super(entityType, level);
@@ -58,12 +61,17 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 
 	@WrapOperation(
 			method = "getGroundFriction",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;getFriction()F")
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getFriction(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/Entity;)F")
 	)
-	private float getGroundFriction(final Block block, final Operation<Float> original) {
-		return boattweaks$getSettings().frictionOverrides().containsKey(block)
-				? boattweaks$getSettings().frictionOverrides().getFloat(block)
-				: original.call(block);
+	private float boattweaks$getGroundFriction(
+			final BlockState block,
+			final LevelReader levelReader,
+			final BlockPos blockPos,
+			final Entity entity,
+			final Operation<Float> original) {
+		return boattweaks$getSettings().frictionOverrides().containsKey(block.getBlock())
+				? boattweaks$getSettings().frictionOverrides().getFloat(block.getBlock())
+				: original.call(block, levelReader, blockPos, entity);
 	}
 
 	@ModifyConstant(method = "controlBoat", constant = @Constant(floatValue = 1.0f))
@@ -107,11 +115,11 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 	@Inject(method = "tick", at = @At("HEAD"))
 	private void tick(CallbackInfo ci) {
 		Boat boat = (Boat) (Object) this;
-		if (wallHitCd > 0) {
-			wallHitCd--;
+		if (boatTweaks$wallHitCd > 0) {
+			boatTweaks$wallHitCd--;
 		} else if (boat.horizontalCollision) {
 			BoatSettings settings = boattweaks$getSettings();
-			wallHitCd = settings.wallHitCooldown();
+			boatTweaks$wallHitCd = settings.wallHitCooldown();
 			float scale = 1 - settings.wallHitSpeedLoss();
 			boat.setDeltaMovement(boat.getDeltaMovement().multiply(scale, 1, scale));
 		}
@@ -124,8 +132,8 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 
 	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
 	private void addAdditionalSaveData(CompoundTag compoundTag, CallbackInfo ci) {
-		if (settings != null) {
-			compoundTag.put("BoatTweaksSettings", BoatSettings.CODEC.encodeStart(NbtOps.INSTANCE, settings).getOrThrow());
+		if (boatTweaks$settings != null) {
+			compoundTag.put("BoatTweaksSettings", BoatSettings.CODEC.encodeStart(NbtOps.INSTANCE, boatTweaks$settings).getOrThrow());
 		}
 	}
 
@@ -138,15 +146,15 @@ public abstract class BoatSettingsMixin extends VehicleEntity implements BTConfi
 
 	@Override
 	public BoatSettings boattweaks$getSettings() {
-		if (settings == null) {
+		if (boatTweaks$settings == null) {
 			return BoatSettings.DEFAULT;
 		}
-		return settings;
+		return boatTweaks$settings;
 	}
 
 	@Override
 	public void boattweaks$setSettings(@Nullable BoatSettings settings) {
-		this.settings = settings;
+		this.boatTweaks$settings = settings;
 	}
 
 	@Override

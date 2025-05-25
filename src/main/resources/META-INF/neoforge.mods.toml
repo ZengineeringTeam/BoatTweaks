@@ -1,0 +1,22 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "ARR"
+
+[[mods]]
+modId = "boattweaks"
+version = "${file.jarVersion}"
+displayName = "Boat Tweaks"
+authors = "Snownee"
+displayURL = "https://www.curseforge.com/minecraft/mc-mods/boattweaks"
+description = "Provides utilities and improves the maneuverability of the boats so that more people can enjoy the fun of boat racing."
+credits = "SettingDust"
+
+[[dependencies.boattweaks]]
+modId = "kiwi"
+versionRange = "[15,)"
+
+[[mixins]]
+config = "boattweaks.mixins.json"
+
+[modproperties.boattweaks]
+catalogueItemIcon = "oak_boat" #Support for Catalogue mod

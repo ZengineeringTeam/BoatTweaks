@@ -10,10 +10,6 @@ plugins {
 }
 
 val archive_name: String by rootProject.properties
-val id: String by rootProject.properties
-val name: String by rootProject.properties
-val description: String by rootProject.properties
-val source: String by rootProject.properties
 
 group = "snownee.boattweaks"
 
@@ -57,71 +53,44 @@ repositories {
             includeGroup("me.shedaniel.cloth")
         }
     }
+
+    maven("https://maven.latvian.dev/releases") {
+        content {
+            includeGroup("dev.latvian.mods")
+            includeGroup("dev.latvian.apps")
+        }
+    }
 }
 
 unimined.minecraft {
     version(catalog.versions.minecraft.get())
 
     mappings {
-        intermediary()
         mojmap()
-        parchment(mcVersion = "1.21", version = "2024.07.28")
+        parchment(mcVersion = catalog.versions.minecraft.get(), version = "2024.11.17")
 
-        devFallbackNamespace("intermediary")
+        devFallbackNamespace("mojmap")
     }
 
     if (sourceSet == sourceSets.main.get()) {
-        fabric {
-            loader(catalog.versions.fabric.loader.get())
+        neoForge {
+            loader("172")
         }
     }
 }
 
-val modImplementation by configurations.getting
 val include by configurations.getting
 
 dependencies {
-    modImplementation(unimined.fabricApi.fabric(catalog.versions.fabric.api.get()))
-
-    modImplementation(catalog.kiwi)
-    modImplementation(catalog.boathud)
-    modImplementation(catalog.cloth.config) {
+    implementation("maven.modrinth:kiwi:15.5.2+neoforge")
+    implementation("me.shedaniel.cloth:cloth-config-neoforge:15.0.140") {
         exclude(group = "net.fabricmc.fabric-api")
     }
 
-    modImplementation(catalog.openboatutils)
+    implementation("dev.latvian.mods:kubejs-neoforge:2101.7.2-build.233")
 }
 
 tasks {
-    withType<ProcessResources> {
-        val properties = mapOf(
-                "id" to id,
-                "version" to rootProject.version,
-                "group" to rootProject.group,
-                "name" to rootProject.name,
-                "description" to rootProject.property("description").toString(),
-                "source" to rootProject.property("source").toString(),
-                "fabric_loader" to ">=0.15",
-                "minecraft" to ">=1.21",
-                "kiwi" to ">=15",
-                "java" to ">=21"
-        )
-        from(rootProject.sourceSets.main.get().resources)
-        inputs.properties(properties)
-
-        filesMatching(
-                listOf(
-                        "fabric.mod.json",
-                        "META-INF/neoforge.mods.toml",
-                        "META-INF/mods.toml",
-                        "*.mixins.json",
-                        "META-INF/MANIFEST.MF"
-                )
-        ) {
-            expand(properties)
-        }
-    }
-
     named<Jar>("sourcesJar") {
         from(sourceSets.map { it.allSource })
 
@@ -133,8 +102,5 @@ tasks {
     }
 
     named<AbstractRemapJarTask>("remapJar") {
-        mixinRemap {
-            disableRefmap()
-        }
     }
 }
