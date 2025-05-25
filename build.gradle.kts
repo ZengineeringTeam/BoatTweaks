@@ -1,5 +1,5 @@
 import org.gradle.jvm.tasks.Jar
-import xyz.wagyourtail.unimined.api.minecraft.task.AbstractRemapJarTask
+import xyz.wagyourtail.unimined.api.minecraft.task.RemapJarTask
 
 plugins {
     java
@@ -103,7 +103,8 @@ tasks {
         options.compilerArgs.add("-parameters")
     }
 
-    named<AbstractRemapJarTask>("remapJar") {
+    named<RemapJarTask>("remapJar") {
+        mixinRemap { off() }
     }
 }
 
