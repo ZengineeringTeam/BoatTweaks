@@ -3,9 +3,8 @@ import xyz.wagyourtail.unimined.api.minecraft.task.AbstractRemapJarTask
 
 plugins {
     java
-    alias(catalog.plugins.git.version)
 
-    alias(catalog.plugins.unmined)
+    id("xyz.wagyourtail.unimined") version "1.3.14"
 
     id("me.shedaniel.unified-publishing") version "0.1.+"
 }
@@ -66,11 +65,11 @@ repositories {
 }
 
 unimined.minecraft {
-    version(catalog.versions.minecraft.get())
+    version(minecraft_version)
 
     mappings {
         mojmap()
-        parchment(mcVersion = catalog.versions.minecraft.get(), version = "2024.11.17")
+        parchment(version = "2024.11.17")
 
         devFallbackNamespace("mojmap")
     }
